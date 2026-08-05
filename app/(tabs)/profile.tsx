@@ -19,8 +19,9 @@ export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
 
   // Form State
-  const [name, setName] = useState(user?.name || 'Muhammad Raihan Ramadhan');
-  const [email, setEmail] = useState(user?.email || 'muhammad.ramadhan@proxsis.co.id');
+  const [showPersonalInfo, setShowPersonalInfo] = useState(false);
+  const [name, setName] = useState(user?.name || 'Raihan Arianto');
+  const [email, setEmail] = useState(user?.email || 'raihan.arianto@proxsis.com');
   const [phone, setPhone] = useState('+62 812-3456-7890');
   const [joinDate] = useState('1 Januari 2024');
   const [department, setDepartment] = useState(user?.department || 'Technology & Digital Innovation');
@@ -54,7 +55,7 @@ export default function ProfileScreen() {
     );
   };
 
-  const firstLetter = (name || 'M').charAt(0).toUpperCase();
+  const firstLetter = (name || 'R').charAt(0).toUpperCase();
 
   return (
     <View style={styles.container}>
@@ -69,7 +70,7 @@ export default function ProfileScreen() {
         <View style={styles.card}>
           {/* Banner Header Gradient */}
           <View style={styles.bannerGradient}>
-            <TouchableOpacity style={styles.editBannerBtn} onPress={handleSaveProfile}>
+            <TouchableOpacity style={styles.editBannerBtn} onPress={() => setShowPersonalInfo(!showPersonalInfo)}>
               <Ionicons name="create-outline" size={20} color="rgba(255, 255, 255, 0.9)" />
             </TouchableOpacity>
           </View>
@@ -127,7 +128,7 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* Save Button */}
+            {/* Simpan Button */}
             <TouchableOpacity
               style={styles.saveHeaderBtn}
               onPress={handleSaveProfile}
@@ -182,114 +183,131 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* Informasi Pribadi Card */}
+        {/* Menu Navigation Card (Informasi Pribadi, Pusat Bantuan, Logout) */}
         <View style={styles.card}>
-          <View style={styles.cardTitleRow}>
-            <Ionicons name="person-outline" size={20} color="#005ea1" />
-            <Text style={styles.cardTitle}>Informasi Pribadi</Text>
-          </View>
-
-          <View style={styles.formContent}>
-            {/* Nama Lengkap */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Nama Lengkap</Text>
-              <TextInput
-                style={styles.underlineInput}
-                value={name}
-                onChangeText={setName}
-                placeholder="Nama Lengkap"
-              />
+          {/* Menu 1: Informasi Pribadi (Accordion Toggle) */}
+          <TouchableOpacity
+            style={styles.menuRow}
+            onPress={() => setShowPersonalInfo(!showPersonalInfo)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.menuRowLeft}>
+              <Ionicons name="person-outline" size={20} color="#005ea1" />
+              <Text style={styles.menuRowText}>Informasi Pribadi</Text>
             </View>
+            <Ionicons
+              name={showPersonalInfo ? 'chevron-down' : 'chevron-forward'}
+              size={18}
+              color="#566069"
+            />
+          </TouchableOpacity>
 
-            {/* Email */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Email</Text>
-              <TextInput
-                style={styles.underlineInput}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                placeholder="Email"
-              />
-            </View>
+          {/* Form Content (Only visible when showPersonalInfo is TRUE) */}
+          {showPersonalInfo && (
+            <View style={styles.formContent}>
+              <View style={styles.divider} />
 
-            {/* Nomor Telepon */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Nomor Telepon</Text>
-              <View style={styles.inputIconWrapper}>
-                <Ionicons name="call-outline" size={18} color="#566069" style={styles.fieldIcon} />
+              {/* Nama Lengkap */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Nama Lengkap</Text>
                 <TextInput
-                  style={[styles.underlineInput, { flex: 1 }]}
-                  value={phone}
-                  onChangeText={setPhone}
-                  keyboardType="phone-pad"
+                  style={styles.underlineInput}
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Nama Lengkap"
                 />
               </View>
-            </View>
 
-            {/* Tanggal Bergabung */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Tanggal Bergabung</Text>
-              <View style={styles.inputIconWrapper}>
-                <Ionicons name="calendar-outline" size={18} color="#566069" style={styles.fieldIcon} />
+              {/* Email */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Email</Text>
                 <TextInput
-                  style={[styles.underlineInput, { flex: 1, color: '#566069' }]}
-                  value={joinDate}
-                  editable={false}
+                  style={styles.underlineInput}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  placeholder="Email"
                 />
               </View>
-            </View>
 
-            {/* Departemen */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Departemen</Text>
-              <TextInput
-                style={styles.underlineInput}
-                value={department}
-                onChangeText={setDepartment}
-              />
-            </View>
+              {/* Nomor Telepon */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Nomor Telepon</Text>
+                <View style={styles.inputIconWrapper}>
+                  <Ionicons name="call-outline" size={18} color="#566069" style={styles.fieldIcon} />
+                  <TextInput
+                    style={[styles.underlineInput, { flex: 1 }]}
+                    value={phone}
+                    onChangeText={setPhone}
+                    keyboardType="phone-pad"
+                  />
+                </View>
+              </View>
 
-            {/* Posisi */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Posisi</Text>
-              <TextInput
-                style={styles.underlineInput}
-                value={position}
-                onChangeText={setPosition}
-              />
-            </View>
+              {/* Tanggal Bergabung */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Tanggal Bergabung</Text>
+                <View style={styles.inputIconWrapper}>
+                  <Ionicons name="calendar-outline" size={18} color="#566069" style={styles.fieldIcon} />
+                  <TextInput
+                    style={[styles.underlineInput, { flex: 1, color: '#566069' }]}
+                    value={joinDate}
+                    editable={false}
+                  />
+                </View>
+              </View>
 
-            {/* Alamat */}
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>Alamat</Text>
-              <View style={styles.inputIconWrapper}>
-                <Ionicons name="location-outline" size={18} color="#566069" style={styles.fieldIcon} />
+              {/* Departemen */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Departemen</Text>
                 <TextInput
-                  style={[styles.underlineInput, { flex: 1 }]}
-                  value={address}
-                  onChangeText={setAddress}
+                  style={styles.underlineInput}
+                  value={department}
+                  onChangeText={setDepartment}
                 />
               </View>
+
+              {/* Posisi */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Posisi</Text>
+                <TextInput
+                  style={styles.underlineInput}
+                  value={position}
+                  onChangeText={setPosition}
+                />
+              </View>
+
+              {/* Alamat */}
+              <View style={styles.fieldGroup}>
+                <Text style={styles.fieldLabel}>Alamat</Text>
+                <View style={styles.inputIconWrapper}>
+                  <Ionicons name="location-outline" size={18} color="#566069" style={styles.fieldIcon} />
+                  <TextInput
+                    style={[styles.underlineInput, { flex: 1 }]}
+                    value={address}
+                    onChangeText={setAddress}
+                  />
+                </View>
+              </View>
+
+              {/* Save Button */}
+              <TouchableOpacity
+                style={styles.submitBtn}
+                onPress={handleSaveProfile}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.submitBtnText}>
+                  {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
+                </Text>
+              </TouchableOpacity>
             </View>
+          )}
 
-            {/* Save Button */}
-            <TouchableOpacity
-              style={styles.submitBtn}
-              onPress={handleSaveProfile}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.submitBtnText}>
-                {saving ? 'Menyimpan...' : 'Simpan Perubahan'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          <View style={styles.divider} />
 
-        {/* Menu Pusat Bantuan & Logout */}
-        <View style={styles.card}>
-          <TouchableOpacity style={styles.menuRow} onPress={() => router.push('/help')}>
+          {/* Menu 2: Pusat Bantuan & FAQ */}
+          <TouchableOpacity style={styles.menuRow} onPress={() => router.push('/help')} activeOpacity={0.7}>
             <View style={styles.menuRowLeft}>
               <Ionicons name="help-buoy-outline" size={20} color="#005ea1" />
               <Text style={styles.menuRowText}>Pusat Bantuan & FAQ</Text>
@@ -299,7 +317,8 @@ export default function ProfileScreen() {
 
           <View style={styles.divider} />
 
-          <TouchableOpacity style={styles.menuRow} onPress={handleLogout}>
+          {/* Menu 3: Keluar dari Akun */}
+          <TouchableOpacity style={styles.menuRow} onPress={handleLogout} activeOpacity={0.7}>
             <View style={styles.menuRowLeft}>
               <Ionicons name="log-out-outline" size={20} color="#BA1A1A" />
               <Text style={[styles.menuRowText, { color: '#BA1A1A' }]}>Keluar dari Akun</Text>
@@ -542,20 +561,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
-  cardTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    padding: 20,
-    paddingBottom: 0,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#121C2C',
-  },
   formContent: {
     padding: 20,
+    paddingTop: 0,
     gap: 18,
   },
   fieldGroup: {
