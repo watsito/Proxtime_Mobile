@@ -69,11 +69,7 @@ export default function ProfileScreen() {
         {/* Profile Header Card */}
         <View style={styles.card}>
           {/* Banner Header Gradient */}
-          <View style={styles.bannerGradient}>
-            <TouchableOpacity style={styles.editBannerBtn} onPress={() => setShowPersonalInfo(!showPersonalInfo)}>
-              <Ionicons name="create-outline" size={20} color="rgba(255, 255, 255, 0.9)" />
-            </TouchableOpacity>
-          </View>
+          <View style={styles.bannerGradient} />
 
           {/* Overlapping Avatar Circle */}
           <View style={styles.avatarSection}>
@@ -127,15 +123,6 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-
-            {/* Simpan Button */}
-            <TouchableOpacity
-              style={styles.saveHeaderBtn}
-              onPress={handleSaveProfile}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.saveHeaderBtnText}>{saving ? 'Menyimpan...' : 'Simpan'}</Text>
-            </TouchableOpacity>
 
             {/* Stats Footer Row (3 Columns) */}
             <View style={styles.statsRow}>
