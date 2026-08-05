@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Image } from 'react-native';
 import { theme } from '../theme';
 
 interface WordmarkProps {
@@ -11,8 +11,20 @@ export const Wordmark: React.FC<WordmarkProps> = ({ size = 'md', subtitle = 'Att
   const isLarge = size === 'lg';
   const isSmall = size === 'sm';
 
+  const logoDimension = isLarge ? 64 : isSmall ? 28 : 44;
+
   return (
     <View style={styles.container}>
+      {/* Proxsis Official Logo Image */}
+      <Image
+        source={require('../../assets/icon-proxsis.jpeg')}
+        style={[
+          styles.logoImage,
+          { width: logoDimension, height: logoDimension, borderRadius: logoDimension / 4 },
+        ]}
+        resizeMode="contain"
+      />
+
       <View style={styles.badgeContainer}>
         <Text style={[styles.brandText, isLarge && styles.brandTextLg, isSmall && styles.brandTextSm]}>
           Prox<Text style={styles.brandAccent}>Time</Text>
@@ -31,10 +43,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: theme.spacing.sm,
+    gap: 8,
+  },
+  logoImage: {
+    marginBottom: 4,
   },
   badgeContainer: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     gap: 8,
   },
   brandText: {
@@ -59,14 +75,14 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.sm,
   },
   taglineText: {
-    fontSize: 10,
+    fontSize: theme.typography.size.xs,
     fontWeight: '700',
     color: theme.colors.primary,
-    letterSpacing: 0.8,
+    letterSpacing: 0.5,
   },
   subtitle: {
     fontSize: theme.typography.size.sm,
     color: theme.colors.textSecondary,
-    marginTop: 4,
+    textAlign: 'center',
   },
 });
