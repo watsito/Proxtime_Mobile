@@ -2,9 +2,11 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../../src/providers/AuthProvider';
 import { theme } from '../../src/theme';
 
 export default function TabsLayout() {
+  const { isAdmin } = useAuth();
   const insets = useSafeAreaInsets();
 
   return (
@@ -31,34 +33,53 @@ export default function TabsLayout() {
         options={{
           title: 'Dashboard',
           tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
+            <Ionicons
+              name={focused ? (isAdmin ? 'grid' : 'home') : (isAdmin ? 'grid-outline' : 'home-outline')}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
+
       <Tabs.Screen
         name="history"
         options={{
-          title: 'Riwayat',
+          title: isAdmin ? 'Karyawan' : 'Riwayat',
           tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={22} color={color} />
+            <Ionicons
+              name={focused ? (isAdmin ? 'people' : 'calendar') : (isAdmin ? 'people-outline' : 'calendar-outline')}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
+
       <Tabs.Screen
         name="leave"
         options={{
           title: 'Cuti & Izin',
           tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-            <Ionicons name={focused ? 'document-text' : 'document-text-outline'} size={22} color={color} />
+            <Ionicons
+              name={focused ? 'document-text' : 'document-text-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />
+
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profil',
           tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
+            <Ionicons
+              name={focused ? 'person' : 'person-outline'}
+              size={22}
+              color={color}
+            />
           ),
         }}
       />

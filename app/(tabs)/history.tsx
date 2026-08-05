@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,16 @@ import {
   TextInput,
   Image,
   Modal,
+  ScrollView,
   ListRenderItemInfo,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../../src/providers/AuthProvider';
 import { proxtimeService } from '../../src/services/proxtime';
-import { AttendanceRecord } from '../../src/types';
+import { adminService } from '../../src/services/adminService';
+import { AttendanceRecord, EmployeeItem } from '../../src/types';
 import { PhotoPreviewModal } from '../../src/components/PhotoPreviewModal';
 
 const MONTH_OPTIONS = [
@@ -26,7 +29,10 @@ const MONTH_OPTIONS = [
 ];
 
 export default function HistoryScreen() {
+  const { isAdmin } = useAuth();
   const insets = useSafeAreaInsets();
+
+  // Employee State
   const [history, setHistory] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -35,190 +41,268 @@ export default function HistoryScreen() {
   const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const loadHistory = async () => {
-    setLoading(true);
+  // Admin State
+  const [employees, setEmployees] = useState<EmployeeItem[]>([]);
+  const [adminLoading, setAdminLoading] = useState(false);
+
+  const loadData = async () => {
     try {
-      const records = await proxtimeService.getAttendanceHistory();
-      setHistory(records);
+      if (isAdmin) {
+        setAdminLoading(true);
+        const emps = await adminService.getEmployees();
+        setEmployees(emps);
+        setAdminLoading(false);
+      } else {
+        setLoading(true);
+        const records = await proxtimeService.getAttendanceHistory();
+        setHistory(records);
+        setLoading(false);
+      }
     } catch (err) {
-      console.error('Error loading history:', err);
-    } finally {
-      setLoading(false);
+      console.error('Error loading history screen data:', err);
     }
   };
 
   useFocusEffect(
     useCallback(() => {
-      loadHistory();
-    }, [])
+      loadData();
+    }, [isAdmin])
   );
 
-  // Active month label for button
-  const currentMonthLabel = useMemo(() => {
-    const found = MONTH_OPTIONS.find((m) => m.id === selectedMonth);
-    return found ? found.label : 'Pilih Bulan';
-  }, [selectedMonth]);
-
-  // Filter history by search query AND selected month
   const filteredHistory = useMemo(() => {
     return history.filter((item) => {
-      // 1. Month Filter
-      if (selectedMonth !== 'ALL') {
-        const itemDateStr = item.date; // e.g. "2026-08-04"
-        if (!itemDateStr.startsWith(selectedMonth)) {
-          return false;
-        }
-      }
+      const matchesSearch =
+        searchQuery.trim() === '' ||
+        item.date.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.dayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.status.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.locationName.toLowerCase().includes(searchQuery.toLowerCase());
 
-      // 2. Search Query Filter
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const matchLocation = item.locationName.toLowerCase().includes(q);
-        const matchStatus = item.status.toLowerCase().includes(q);
-        const matchDay = item.dayName.toLowerCase().includes(q);
-        const matchDate = item.date.includes(q);
-        return matchLocation || matchStatus || matchDay || matchDate;
-      }
+      const matchesMonth =
+        selectedMonth === 'ALL' || item.date.startsWith(selectedMonth);
 
-      return true;
+      return matchesSearch && matchesMonth;
     });
   }, [history, searchQuery, selectedMonth]);
 
-  const handleOpenPreview = (record: AttendanceRecord) => {
-    setSelectedRecord(record);
-    setModalVisible(true);
-  };
+  const filteredEmployees = useMemo(() => {
+    return employees.filter(
+      (emp) =>
+        emp.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        emp.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        emp.department.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [employees, searchQuery]);
 
-  const renderItem = ({ item }: ListRenderItemInfo<AttendanceRecord>) => {
+  // =========================================================================
+  // RENDER: ADMIN VIEW (Direktori Karyawan)
+  // =========================================================================
+  if (isAdmin) {
+    return (
+      <View style={styles.container}>
+        {/* Top Header */}
+        <View style={[styles.topHeader, { paddingTop: insets.top + 12 }]}>
+          <View style={styles.headerTitleGroup}>
+            <Text style={styles.headerTitle}>Manajemen Karyawan</Text>
+            <View style={styles.adminPillBadge}>
+              <Text style={styles.adminPillBadgeText}>Admin</Text>
+            </View>
+          </View>
+        </View>
+
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]}
+          refreshControl={<RefreshControl refreshing={adminLoading} onRefresh={loadData} />}
+        >
+          {/* Search Bar Input */}
+          <View style={styles.searchWrapper}>
+            <Ionicons name="search-outline" size={18} color="#717782" style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Cari nama, posisi, atau departemen..."
+              placeholderTextColor="#717782"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+          </View>
+
+          <Text style={styles.sectionTitle}>
+            Daftar Karyawan ({filteredEmployees.length})
+          </Text>
+
+          {filteredEmployees.map((emp) => (
+            <View key={emp.id} style={styles.employeeCard}>
+              <View style={styles.cardHeaderRow}>
+                <View style={styles.avatarWrapper}>
+                  <Text style={styles.avatarText}>{emp.avatarInitial}</Text>
+                </View>
+
+                <View style={styles.empInfo}>
+                  <Text style={styles.empName}>{emp.name}</Text>
+                  <Text style={styles.empPosition}>{emp.position}</Text>
+                  <Text style={styles.empDept}>{emp.department}</Text>
+                </View>
+
+                <View
+                  style={[
+                    styles.empStatusBadge,
+                    emp.status === 'active' && styles.statusBadgeActive,
+                    emp.status === 'wfh' && styles.statusBadgeWfh,
+                    emp.status === 'inactive' && styles.statusBadgeInactive,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.empStatusText,
+                      emp.status === 'active' && styles.statusTextActive,
+                      emp.status === 'wfh' && styles.statusTextWfh,
+                      emp.status === 'inactive' && styles.statusTextInactive,
+                    ]}
+                  >
+                    {emp.status.toUpperCase()}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.divider} />
+
+              <View style={styles.contactRow}>
+                <View style={styles.contactItem}>
+                  <Ionicons name="mail-outline" size={14} color="#566069" />
+                  <Text style={styles.contactText}>{emp.email}</Text>
+                </View>
+                <View style={styles.contactItem}>
+                  <Ionicons name="call-outline" size={14} color="#566069" />
+                  <Text style={styles.contactText}>{emp.phone}</Text>
+                </View>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // =========================================================================
+  // RENDER: EMPLOYEE VIEW (Riwayat Absensi)
+  // =========================================================================
+  const renderHistoryItem = ({ item }: ListRenderItemInfo<AttendanceRecord>) => {
+    const isPresent = item.status === 'HADIR';
     const isLate = item.status === 'TERLAMBAT';
 
     return (
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => handleOpenPreview(item)}
-        activeOpacity={0.85}
-      >
-        {/* Card Header Row */}
+      <View style={styles.recordCard}>
         <View style={styles.cardHeader}>
-          <View style={styles.userGroup}>
-            <View style={styles.avatarWrapper}>
-              <Image
-                source={{
-                  uri:
-                    item.photoUrl ||
-                    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80',
-                }}
-                style={styles.avatarImg}
-              />
-            </View>
-            <Text style={styles.dateTitle}>{item.dayName}</Text>
+          <View style={styles.dateGroup}>
+            <Text style={styles.dayText}>{item.dayName}</Text>
+            <Text style={styles.dateSubText}>{item.date}</Text>
           </View>
-
-          {/* Status Badge Pill */}
-          <View style={[styles.statusPill, isLate ? styles.statusPillLate : styles.statusPillPresent]}>
-            <Text style={[styles.statusPillText, isLate ? styles.statusTextLate : styles.statusTextPresent]}>
-              {isLate ? 'TERLAMBAT 15m' : item.status}
+          <View
+            style={[
+              styles.statusBadge,
+              isPresent && styles.statusPresent,
+              isLate && styles.statusLate,
+            ]}
+          >
+            <Text
+              style={[
+                styles.statusBadgeText,
+                isPresent && styles.statusTextPresent,
+                isLate && styles.statusTextLate,
+              ]}
+            >
+              {item.status}
             </Text>
           </View>
         </View>
 
-        {/* Check-in / Check-out Grid */}
-        <View style={styles.gridRow}>
-          {/* Check-in */}
-          <View style={styles.gridCol}>
-            <Text style={styles.gridLabel}>CHECK-IN</Text>
-            <View style={styles.timeGroup}>
-              <Ionicons
-                name="log-in-outline"
-                size={20}
-                color={isLate ? '#BA1A1A' : '#005ea1'}
-              />
-              <Text style={styles.timeText}>{item.clockIn}</Text>
-            </View>
+        <View style={styles.timeGrid}>
+          <View style={styles.timeCol}>
+            <Text style={styles.timeColLabel}>Jam Masuk</Text>
+            <Text style={styles.timeColValue}>{item.clockIn}</Text>
           </View>
-
-          {/* Check-out */}
-          <View style={styles.gridCol}>
-            <Text style={styles.gridLabel}>CHECK-OUT</Text>
-            <View style={styles.timeGroup}>
-              <Ionicons name="log-out-outline" size={20} color="#717782" />
-              <Text style={styles.timeText}>{item.clockOut || '05:00 PM'}</Text>
-            </View>
+          <View style={styles.timeColDivider} />
+          <View style={styles.timeCol}>
+            <Text style={styles.timeColLabel}>Jam Pulang</Text>
+            <Text style={styles.timeColValue}>{item.clockOut || '--:--'}</Text>
           </View>
         </View>
 
-        {/* Location Footer Line */}
-        <View style={styles.locationFooter}>
-          <Ionicons name="location-outline" size={16} color="#414751" />
-          <Text style={styles.locationText} numberOfLines={1}>
-            {item.locationName}
-          </Text>
+        <View style={styles.cardFooter}>
+          <View style={styles.locationInfo}>
+            <Ionicons name="location-outline" size={14} color="#566069" />
+            <Text style={styles.locationText} numberOfLines={1}>
+              {item.locationName}
+            </Text>
+          </View>
+          {item.photoUrl && (
+            <TouchableOpacity
+              style={styles.photoBtn}
+              onPress={() => {
+                setSelectedRecord(item);
+                setModalVisible(true);
+              }}
+            >
+              <Ionicons name="image-outline" size={14} color="#005ea1" />
+              <Text style={styles.photoBtnText}>Foto</Text>
+            </TouchableOpacity>
+          )}
         </View>
-      </TouchableOpacity>
+      </View>
     );
   };
 
   return (
     <View style={styles.container}>
+      {/* Top Bar Header */}
+      <View style={[styles.topHeader, { paddingTop: insets.top + 12 }]}>
+        <Text style={styles.headerTitle}>Riwayat Absensi</Text>
+      </View>
+
+      {/* Filter Row: Search & Month Select */}
+      <View style={styles.filterBar}>
+        <View style={styles.searchWrapper}>
+          <Ionicons name="search-outline" size={18} color="#717782" style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Cari tanggal, status, atau lokasi..."
+            placeholderTextColor="#717782"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+
+        <TouchableOpacity
+          style={styles.monthSelectBtn}
+          onPress={() => setMonthModalVisible(true)}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="calendar-outline" size={18} color="#005ea1" />
+          <Text style={styles.monthSelectText}>
+            {MONTH_OPTIONS.find((m) => m.id === selectedMonth)?.label.split(' ')[0] || 'Filter'}
+          </Text>
+          <Ionicons name="chevron-down" size={14} color="#005ea1" />
+        </TouchableOpacity>
+      </View>
+
+      {/* FlatList Riwayat Absensi */}
       <FlatList
         data={filteredHistory}
         keyExtractor={(item) => item.id}
-        renderItem={renderItem}
+        renderItem={renderHistoryItem}
         contentContainerStyle={[
           styles.listContent,
-          { paddingTop: insets.top + 16, paddingBottom: insets.bottom + 80 },
+          { paddingBottom: insets.bottom + 90 },
         ]}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadHistory} />}
-        ListHeaderComponent={
-          <View style={styles.headerSection}>
-            {/* Page Title & Subtitle */}
-            <Text style={styles.pageTitle}>Riwayat Absensi Saya</Text>
-            <Text style={styles.pageSubtitle}>Pantau riwayat check-in dan check-out Anda</Text>
-
-            {/* Filter Inputs Group */}
-            <View style={styles.filterGroup}>
-              {/* Search Bar Input */}
-              <View style={styles.searchWrapper}>
-                <Ionicons name="search-outline" size={18} color="#717782" style={styles.searchIcon} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder="Cari lokasi atau status..."
-                  placeholderTextColor="#717782"
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearSearchBtn}>
-                    <Ionicons name="close-circle" size={18} color="#717782" />
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              {/* Month Selector Button */}
-              <TouchableOpacity
-                style={styles.monthSelectorBtn}
-                activeOpacity={0.8}
-                onPress={() => setMonthModalVisible(true)}
-              >
-                <Text style={styles.monthSelectorText}>{currentMonthLabel}</Text>
-                <Ionicons name="calendar-outline" size={20} color="#005ea1" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        }
-        ListEmptyComponent={
-          <View style={styles.emptyBox}>
-            <Ionicons name="calendar-clear-outline" size={48} color="#717782" />
-            <Text style={styles.emptyText}>Tidak ada riwayat absensi ditemukan</Text>
-          </View>
-        }
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={loadData} />}
       />
 
-      {/* Month Picker Selection Modal */}
+      {/* Month Selection Modal */}
       <Modal
         visible={monthModalVisible}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setMonthModalVisible(false)}
       >
         <TouchableOpacity
@@ -226,33 +310,35 @@ export default function HistoryScreen() {
           activeOpacity={1}
           onPress={() => setMonthModalVisible(false)}
         >
-          <View style={styles.monthModalCard}>
-            <View style={styles.monthModalHeader}>
-              <Text style={styles.monthModalTitle}>Pilih Periode Bulan</Text>
-              <TouchableOpacity onPress={() => setMonthModalVisible(false)}>
-                <Ionicons name="close" size={22} color="#414751" />
-              </TouchableOpacity>
-            </View>
+          <View style={styles.monthModalSheet}>
+            <View style={styles.modalIndicator} />
+            <Text style={styles.monthModalTitle}>Pilih Bulan Absensi</Text>
 
-            {MONTH_OPTIONS.map((option) => {
-              const isSelected = selectedMonth === option.id;
-              return (
-                <TouchableOpacity
-                  key={option.id}
-                  style={[styles.monthOptionItem, isSelected && styles.monthOptionSelected]}
-                  onPress={() => {
-                    setSelectedMonth(option.id);
-                    setMonthModalVisible(false);
-                  }}
-                  activeOpacity={0.7}
+            {MONTH_OPTIONS.map((m) => (
+              <TouchableOpacity
+                key={m.id}
+                style={[
+                  styles.monthOptionRow,
+                  selectedMonth === m.id && styles.monthOptionActive,
+                ]}
+                onPress={() => {
+                  setSelectedMonth(m.id);
+                  setMonthModalVisible(false);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.monthOptionText,
+                    selectedMonth === m.id && styles.monthOptionTextActive,
+                  ]}
                 >
-                  <Text style={[styles.monthOptionText, isSelected && styles.monthOptionTextSelected]}>
-                    {option.label}
-                  </Text>
-                  {isSelected && <Ionicons name="checkmark-circle" size={20} color="#005ea1" />}
-                </TouchableOpacity>
-              );
-            })}
+                  {m.label}
+                </Text>
+                {selectedMonth === m.id && (
+                  <Ionicons name="checkmark-circle" size={20} color="#005ea1" />
+                )}
+              </TouchableOpacity>
+            ))}
           </View>
         </TouchableOpacity>
       </Modal>
@@ -270,205 +356,318 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F0F7FF',
+    backgroundColor: '#F8FAFC',
   },
-  listContent: {
-    paddingHorizontal: 16,
-  },
-  headerSection: {
-    marginBottom: 20,
-  },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#121C2C',
-    marginBottom: 4,
-  },
-  pageSubtitle: {
-    fontSize: 14,
-    color: '#414751',
-    marginBottom: 20,
-  },
-  filterGroup: {
-    gap: 12,
-  },
-  searchWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0f3ff',
-    borderRadius: 50,
-    paddingHorizontal: 16,
-    height: 48,
-  },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 14,
-    color: '#121C2C',
-  },
-  clearSearchBtn: {
-    padding: 4,
-  },
-  monthSelectorBtn: {
+  topHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f0f3ff',
-    borderRadius: 50,
-    paddingHorizontal: 20,
-    height: 48,
-  },
-  monthSelectorText: {
-    fontSize: 14,
-    color: '#414751',
-    fontWeight: '500',
-  },
-  card: {
+    paddingHorizontal: 16,
+    paddingBottom: 14,
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  headerTitleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#005ea1',
+  },
+  adminPillBadge: {
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 50,
+  },
+  adminPillBadgeText: {
+    fontSize: 11,
+    color: '#475569',
+    fontWeight: '600',
+  },
+  scrollContent: {
+    padding: 16,
+    gap: 16,
+  },
+  filterBar: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+    gap: 10,
+  },
+  searchWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 50,
+    paddingHorizontal: 14,
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  searchIcon: {
+    marginRight: 6,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: '#121C2C',
+  },
+  monthSelectBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#EBF3FE',
+    paddingHorizontal: 14,
+    height: 44,
+    borderRadius: 50,
+    borderWidth: 1,
+    borderColor: '#005ea1',
+  },
+  monthSelectText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#005ea1',
+  },
+  listContent: {
+    padding: 16,
+    gap: 12,
+  },
+  recordCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
     shadowColor: '#4A90D9',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 12,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
-  userGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
+  dateGroup: {
+    gap: 2,
   },
-  avatarWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#c1c7d2',
-    backgroundColor: '#d9e3f9',
-  },
-  avatarImg: {
-    width: '100%',
-    height: '100%',
-  },
-  dateTitle: {
-    fontSize: 16,
+  dayText: {
+    fontSize: 15,
     fontWeight: '700',
     color: '#121C2C',
-    flex: 1,
   },
-  statusPill: {
-    paddingHorizontal: 12,
+  dateSubText: {
+    fontSize: 12,
+    color: '#566069',
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 50,
   },
-  statusPillPresent: {
+  statusPresent: {
     backgroundColor: '#E6F4EA',
   },
-  statusPillLate: {
-    backgroundColor: '#FFDAD6',
+  statusLate: {
+    backgroundColor: '#FEF3C7',
   },
-  statusPillText: {
+  statusBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    letterSpacing: 0.5,
   },
   statusTextPresent: {
     color: '#1E8E3E',
   },
   statusTextLate: {
-    color: '#93000A',
+    color: '#D97706',
   },
-  gridRow: {
+  timeGrid: {
     flexDirection: 'row',
-    marginBottom: 16,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 12,
   },
-  gridCol: {
+  timeCol: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  timeColDivider: {
+    width: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  timeColLabel: {
+    fontSize: 11,
+    color: '#566069',
+  },
+  timeColValue: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#121C2C',
+    marginTop: 2,
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  locationInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     flex: 1,
   },
-  gridLabel: {
+  locationText: {
+    fontSize: 12,
+    color: '#566069',
+  },
+  photoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#F0F3FF',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 50,
+  },
+  photoBtnText: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#414751',
-    marginBottom: 4,
-    letterSpacing: 0.5,
+    color: '#005ea1',
   },
-  timeGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  timeText: {
+  sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#121C2C',
   },
-  locationFooter: {
+  employeeCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 16,
+    shadowColor: '#4A90D9',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+    marginBottom: 12,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatarWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#EBF3FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#005ea1',
+  },
+  empInfo: {
+    flex: 1,
+  },
+  empName: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#121C2C',
+  },
+  empPosition: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#005ea1',
+    marginTop: 2,
+  },
+  empDept: {
+    fontSize: 11,
+    color: '#566069',
+  },
+  empStatusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 50,
+  },
+  statusBadgeActive: {
+    backgroundColor: '#E6F4EA',
+  },
+  statusBadgeWfh: {
+    backgroundColor: '#E0F2FE',
+  },
+  statusBadgeInactive: {
+    backgroundColor: '#F1F5F9',
+  },
+  empStatusText: {
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  statusTextActive: {
+    color: '#1E8E3E',
+  },
+  statusTextWfh: {
+    color: '#0284C7',
+  },
+  statusTextInactive: {
+    color: '#64748B',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#E2E8F0',
+    marginVertical: 12,
+  },
+  contactRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#d9e3f9',
   },
-  locationText: {
-    fontSize: 14,
-    color: '#414751',
-  },
-  emptyBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: '#717782',
+  contactText: {
+    fontSize: 11,
+    color: '#566069',
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(15, 23, 42, 0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    justifyContent: 'flex-end',
   },
-  monthModalCard: {
-    width: '100%',
+  monthModalSheet: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 24,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: 20,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 5,
-    gap: 8,
+    gap: 12,
   },
-  monthModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+  modalIndicator: {
+    width: 40,
+    height: 4,
+    backgroundColor: '#CBD5E1',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 8,
   },
   monthModalTitle: {
     fontSize: 16,
     fontWeight: '700',
     color: '#121C2C',
+    marginBottom: 8,
   },
-  monthOptionItem: {
+  monthOptionRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -477,17 +676,15 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: '#F8FAFC',
   },
-  monthOptionSelected: {
+  monthOptionActive: {
     backgroundColor: '#EBF3FE',
-    borderWidth: 1,
-    borderColor: '#005ea1',
   },
   monthOptionText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#414751',
+    color: '#566069',
   },
-  monthOptionTextSelected: {
+  monthOptionTextActive: {
     color: '#005ea1',
     fontWeight: '700',
   },
