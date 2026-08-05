@@ -1,25 +1,32 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '../types';
+import { User, UserRole } from '../types';
 import { proxtimeService } from '../services/proxtime';
 
 interface AuthContextType {
   user: User | null;
+  currentRole: UserRole;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isAdmin: boolean;
   login: (nikOrEmail: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  switchRole: (role: UserRole) => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  currentRole: 'admin',
   isAuthenticated: false,
   isLoading: true,
+  isAdmin: true,
   login: async () => {},
   logout: async () => {},
+  switchRole: () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [currentRole, setCurrentRole] = useState<UserRole>('admin');
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
@@ -28,6 +35,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const profile = await proxtimeService.getUserProfile();
         setUser(profile);
+        setCurrentRole(profile.role || 'admin');
       } catch {
         setUser(null);
       } finally {
@@ -42,6 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const loggedUser = await proxtimeService.login(nikOrEmail, password);
       setUser(loggedUser);
+      setCurrentRole(loggedUser.role || 'admin');
     } finally {
       setIsLoading(false);
     }
@@ -51,14 +60,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   };
 
+  const switchRole = (role: UserRole) => {
+    setCurrentRole(role);
+    if (user) {
+      setUser({ ...user, role });
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
+        currentRole,
         isAuthenticated: !!user,
         isLoading,
+        isAdmin: currentRole === 'admin',
         login,
         logout,
+        switchRole,
       }}
     >
       {children}

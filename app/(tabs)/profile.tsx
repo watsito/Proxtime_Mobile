@@ -14,13 +14,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../src/providers/AuthProvider';
 
 export default function ProfileScreen() {
-  const { user, logout } = useAuth();
+  const { user, currentRole, switchRole, logout, isAdmin } = useAuth();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
   // Form State
-  const [name, setName] = useState(user?.name || 'Raihan Arianto');
-  const [email, setEmail] = useState(user?.email || 'raihan.arianto@proxsis.com');
+  const [name, setName] = useState(user?.name || 'Muhammad Raihan Ramadhan');
+  const [email, setEmail] = useState(user?.email || 'muhammad.ramadhan@proxsis.co.id');
   const [phone, setPhone] = useState('+62 812-3456-7890');
   const [joinDate] = useState('1 Januari 2024');
   const [department, setDepartment] = useState(user?.department || 'Technology & Digital Innovation');
@@ -54,7 +54,7 @@ export default function ProfileScreen() {
     );
   };
 
-  const firstLetter = (user?.name || 'R').charAt(0).toUpperCase();
+  const firstLetter = (name || 'M').charAt(0).toUpperCase();
 
   return (
     <View style={styles.container}>
@@ -83,13 +83,51 @@ export default function ProfileScreen() {
             {/* Name & Role Pill */}
             <View style={styles.nameRow}>
               <Text style={styles.userName}>{name}</Text>
-              <View style={styles.roleBadge}>
-                <Text style={styles.roleBadgeText}>Karyawan</Text>
+              <View style={[styles.roleBadge, isAdmin && styles.roleBadgeAdmin]}>
+                <Text style={[styles.roleBadgeText, isAdmin && styles.roleBadgeTextAdmin]}>
+                  {isAdmin ? 'Admin' : 'Karyawan'}
+                </Text>
               </View>
             </View>
             <Text style={styles.userEmail}>{email}</Text>
 
-            {/* Simpan Button */}
+            {/* GANTI ROLE Switcher Pill Row (Matching Web Screenshot) */}
+            <View style={styles.roleSwitcherBox}>
+              <Text style={styles.roleSwitcherLabel}>GANTI ROLE</Text>
+              <View style={styles.rolePillGroup}>
+                <TouchableOpacity
+                  style={[styles.rolePillBtn, currentRole === 'employee' && styles.rolePillBtnActive]}
+                  onPress={() => switchRole('employee')}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="briefcase-outline"
+                    size={14}
+                    color={currentRole === 'employee' ? '#FFFFFF' : '#566069'}
+                  />
+                  <Text style={[styles.rolePillText, currentRole === 'employee' && styles.rolePillTextActive]}>
+                    Karyawan
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.rolePillBtn, currentRole === 'admin' && styles.rolePillBtnActive]}
+                  onPress={() => switchRole('admin')}
+                  activeOpacity={0.8}
+                >
+                  <Ionicons
+                    name="shield-checkmark-outline"
+                    size={14}
+                    color={currentRole === 'admin' ? '#FFFFFF' : '#566069'}
+                  />
+                  <Text style={[styles.rolePillText, currentRole === 'admin' && styles.rolePillTextActive]}>
+                    Admin
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Save Button */}
             <TouchableOpacity
               style={styles.saveHeaderBtn}
               onPress={handleSaveProfile}
@@ -115,6 +153,34 @@ export default function ProfileScreen() {
             </View>
           </View>
         </View>
+
+        {/* Panel Kontrol Admin Card (Only when Admin mode is active) */}
+        {isAdmin && (
+          <View style={[styles.card, styles.adminCard]}>
+            <View style={styles.adminCardHeader}>
+              <View style={styles.adminTitleRow}>
+                <Ionicons name="shield-checkmark" size={20} color="#005ea1" />
+                <Text style={styles.adminCardTitle}>Panel Kontrol Admin</Text>
+              </View>
+              <View style={styles.adminActiveBadge}>
+                <Text style={styles.adminActiveBadgeText}>ADMIN ACTIVE</Text>
+              </View>
+            </View>
+            <Text style={styles.adminCardSub}>
+              Kelola absensi tim, persetujuan cuti & izin, direktori karyawan, dan pengaturan sistem.
+            </Text>
+
+            <TouchableOpacity
+              style={styles.adminEnterBtn}
+              onPress={() => router.push('/admin')}
+              activeOpacity={0.85}
+            >
+              <Ionicons name="apps-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.adminEnterBtnText}>Buka Dashboard Admin</Text>
+              <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Informasi Pribadi Card */}
         <View style={styles.card}>
@@ -320,16 +386,70 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 50,
   },
+  roleBadgeAdmin: {
+    backgroundColor: '#005ea1',
+  },
   roleBadgeText: {
     fontSize: 12,
     fontWeight: '500',
     color: '#414751',
   },
+  roleBadgeTextAdmin: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
   userEmail: {
     fontSize: 14,
     color: '#566069',
     marginTop: 2,
+    marginBottom: 12,
+  },
+  roleSwitcherBox: {
+    alignItems: 'center',
+    backgroundColor: '#F0F3FF',
+    borderRadius: 16,
+    padding: 10,
+    width: '100%',
     marginBottom: 16,
+  },
+  roleSwitcherLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#566069',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  rolePillGroup: {
+    flexDirection: 'row',
+    backgroundColor: '#E2E8F0',
+    borderRadius: 50,
+    padding: 3,
+    width: '100%',
+  },
+  rolePillBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    borderRadius: 50,
+  },
+  rolePillBtnActive: {
+    backgroundColor: '#005ea1',
+    shadowColor: '#005ea1',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  rolePillText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#566069',
+  },
+  rolePillTextActive: {
+    color: '#FFFFFF',
   },
   saveHeaderBtn: {
     backgroundColor: '#005ea1',
@@ -369,6 +489,58 @@ const styles = StyleSheet.create({
     color: '#566069',
     marginTop: 2,
     textAlign: 'center',
+  },
+  adminCard: {
+    borderWidth: 1.5,
+    borderColor: '#005ea1',
+    padding: 16,
+    backgroundColor: '#F0F7FF',
+  },
+  adminCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  adminTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  adminCardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#005ea1',
+  },
+  adminActiveBadge: {
+    backgroundColor: '#005ea1',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 50,
+  },
+  adminActiveBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  adminCardSub: {
+    fontSize: 12,
+    color: '#566069',
+    marginBottom: 14,
+  },
+  adminEnterBtn: {
+    backgroundColor: '#005ea1',
+    height: 44,
+    borderRadius: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  adminEnterBtnText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
   },
   cardTitleRow: {
     flexDirection: 'row',
