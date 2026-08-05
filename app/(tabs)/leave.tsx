@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,17 @@ import { adminService } from '../../src/services/adminService';
 import { LeaveBalance, LeaveRequest } from '../../src/types';
 import { StatusBadge } from '../../src/components/StatusBadge';
 
+export const LEAVE_TYPES_LIST = [
+  { value: 'annual', label: 'Cuti Tahunan', category: 'Cuti', sub: 'Pengajuan cuti reguler tahunan', icon: 'calendar-outline', color: '#005ea1', bg: '#EBF3FE' },
+  { value: 'sick', label: 'Cuti Sakit', category: 'Sakit', sub: 'Disertai surat keterangan dokter', icon: 'fitness-outline', color: '#DC2626', bg: '#FEE2E2' },
+  { value: 'personal', label: 'Cuti Pribadi', category: 'Cuti', sub: 'Keperluan keluarga atau pribadi', icon: 'person-outline', color: '#4F46E5', bg: '#EEF2FF' },
+  { value: 'late', label: 'Izin Telat Datang', category: 'Izin', sub: 'Izin terlambat masuk kerja', icon: 'time-outline', color: '#D97706', bg: '#FEF3C7' },
+  { value: 'early', label: 'Izin WFH', category: 'Izin', sub: 'Izin bekerja dari rumah (WFH)', icon: 'home-outline', color: '#0284C7', bg: '#E0F2FE' },
+  { value: 'marriage', label: 'Cuti Menikah', category: 'Cuti Khusus', sub: 'Cuti khusus pernikahan', icon: 'heart-outline', color: '#EC4899', bg: '#FCE7F3' },
+  { value: 'maternity', label: 'Cuti Melahirkan', category: 'Cuti Khusus', sub: 'Cuti khusus melahirkan', icon: 'happy-outline', color: '#8B5CF6', bg: '#F3E8FF' },
+  { value: 'religious', label: 'Cuti Keagamaan', category: 'Cuti Khusus', sub: 'Cuti ziarah / keagamaan', icon: 'ribbon-outline', color: '#10B981', bg: '#D1FAE5' },
+];
+
 export default function LeaveScreen() {
   const { isAdmin } = useAuth();
   const router = useRouter();
@@ -27,7 +38,7 @@ export default function LeaveScreen() {
   const [balance, setBalance] = useState<LeaveBalance | null>(null);
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
-  const [selectedType, setSelectedType] = useState<string>('Cuti Tahunan');
+  const [selectedTypeObj, setSelectedTypeObj] = useState(LEAVE_TYPES_LIST[0]);
   const [startDate, setStartDate] = useState('25 Ags 2026');
   const [endDate, setEndDate] = useState('26 Ags 2026');
   const [reason, setReason] = useState('');
@@ -175,7 +186,7 @@ export default function LeaveScreen() {
           contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 90 }]}
           refreshControl={<RefreshControl refreshing={adminLoading} onRefresh={loadLeaveData} />}
         >
-          {/* Balance Summary Cards Carousel (Horizontal Scroll) */}
+          {/* Balance Summary Cards Carousel (Horizontal Scroll - Matching proxtime_web) */}
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -409,52 +420,30 @@ export default function LeaveScreen() {
             </View>
           </View>
 
-          {/* STEP 1: Pilih Tipe Cuti */}
+          {/* STEP 1: Pilih Tipe Cuti (Exact Match with proxtime_web) */}
           {currentStep === 1 && (
             <View style={styles.stepContent}>
               <Text style={styles.stepTitle}>Pilih Tipe Cuti / Izin</Text>
 
-              <TouchableOpacity
-                style={[styles.typeOptionCard, selectedType === 'Cuti Tahunan' && styles.typeOptionActive]}
-                onPress={() => setSelectedType('Cuti Tahunan')}
-                activeOpacity={0.8}
-              >
-                <View style={styles.typeIconBg}>
-                  <Ionicons name="calendar-outline" size={20} color="#005ea1" />
-                </View>
-                <View style={styles.typeInfo}>
-                  <Text style={styles.typeName}>Cuti Tahunan</Text>
-                  <Text style={styles.typeSub}>Pengajuan cuti reguler tahunan (Sisa: 8 hari)</Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.typeOptionCard, selectedType === 'Izin Telat / Pulang Awal' && styles.typeOptionActive]}
-                onPress={() => setSelectedType('Izin Telat / Pulang Awal')}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.typeIconBg, { backgroundColor: '#FFF3E0' }]}>
-                  <Ionicons name="time-outline" size={20} color="#E65100" />
-                </View>
-                <View style={styles.typeInfo}>
-                  <Text style={styles.typeName}>Izin Telat / Pulang Awal</Text>
-                  <Text style={styles.typeSub}>Izin keperluan mendesak jam kerja</Text>
-                </View>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.typeOptionCard, selectedType === 'Cuti Sakit' && styles.typeOptionActive]}
-                onPress={() => setSelectedType('Cuti Sakit')}
-                activeOpacity={0.8}
-              >
-                <View style={[styles.typeIconBg, { backgroundColor: '#FEE2E2' }]}>
-                  <Ionicons name="fitness-outline" size={20} color="#DC2626" />
-                </View>
-                <View style={styles.typeInfo}>
-                  <Text style={styles.typeName}>Cuti Sakit</Text>
-                  <Text style={styles.typeSub}>Disertai surat keterangan dokter</Text>
-                </View>
-              </TouchableOpacity>
+              {LEAVE_TYPES_LIST.map((item) => {
+                const isSelected = selectedTypeObj.value === item.value;
+                return (
+                  <TouchableOpacity
+                    key={item.value}
+                    style={[styles.typeOptionCard, isSelected && styles.typeOptionActive]}
+                    onPress={() => setSelectedTypeObj(item)}
+                    activeOpacity={0.8}
+                  >
+                    <View style={[styles.typeIconBg, { backgroundColor: item.bg }]}>
+                      <Ionicons name={item.icon as any} size={20} color={item.color} />
+                    </View>
+                    <View style={styles.typeInfo}>
+                      <Text style={styles.typeName}>{item.label}</Text>
+                      <Text style={styles.typeSub}>{item.sub}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
 
               <TouchableOpacity
                 style={styles.nextBtn}
@@ -476,7 +465,7 @@ export default function LeaveScreen() {
                 <Text style={styles.inputLabel}>Tipe Yang Dipilih</Text>
                 <TextInput
                   style={[styles.inputBox, styles.inputDisabled]}
-                  value={selectedType}
+                  value={selectedTypeObj.label}
                   editable={false}
                 />
               </View>
@@ -547,7 +536,7 @@ export default function LeaveScreen() {
               <View style={styles.reviewBox}>
                 <View style={styles.reviewRow}>
                   <Text style={styles.reviewLabel}>Tipe Pengajuan:</Text>
-                  <Text style={styles.reviewValue}>{selectedType}</Text>
+                  <Text style={styles.reviewValue}>{selectedTypeObj.label}</Text>
                 </View>
 
                 <View style={styles.reviewRow}>
@@ -889,7 +878,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#005ea1',
   },
   stepContent: {
-    gap: 14,
+    gap: 12,
   },
   stepTitle: {
     fontSize: 14,
@@ -903,7 +892,7 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: '#F8FAFC',
     borderRadius: 16,
-    padding: 14,
+    padding: 12,
     borderWidth: 1.5,
     borderColor: '#E2E8F0',
   },
@@ -912,10 +901,9 @@ const styles = StyleSheet.create({
     borderColor: '#005ea1',
   },
   typeIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#EBF3FE',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     justifyContent: 'center',
     alignItems: 'center',
   },
