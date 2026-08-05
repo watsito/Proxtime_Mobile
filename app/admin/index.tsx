@@ -120,17 +120,8 @@ export default function AdminDashboardScreen() {
           </View>
         </View>
 
-        {/* Quick Admin Navigation & Export Toolbar */}
+        {/* Quick Admin Navigation Toolbar */}
         <View style={styles.quickNavRow}>
-          <TouchableOpacity
-            style={styles.actionPillBtn}
-            onPress={handleExport}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="download-outline" size={16} color="#FFFFFF" />
-            <Text style={styles.actionPillText}>Export Laporan</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={styles.quickNavCard}
             onPress={() => router.push('/admin/leave-approvals')}
