@@ -392,30 +392,43 @@ export default function LeaveScreen() {
 
         {/* 3-Step Wizard Form Card */}
         <View style={styles.formCard}>
-          {/* Form Header */}
+          {/* Form Header with Stepper Progress (Matching Web Screenshot) */}
           <View style={styles.formHeader}>
-            <Text style={styles.formTitle}>Pengajuan Cuti / Izin</Text>
-
-            {/* Stepper Dots Indicator */}
             <View style={styles.stepperContainer}>
-              <View style={[styles.stepBadge, currentStep >= 1 && styles.stepBadgeActive]}>
-                <Text style={[styles.stepBadgeText, currentStep >= 1 && styles.stepBadgeTextActive]}>
-                  1
-                </Text>
+              {/* Step 1 */}
+              <View style={styles.stepItemRow}>
+                {currentStep > 1 ? (
+                  <Ionicons name="checkmark-circle" size={22} color="#16A34A" />
+                ) : (
+                  <View style={[styles.stepBadge, currentStep === 1 && styles.stepBadgeActive]}>
+                    <Text style={[styles.stepBadgeText, currentStep === 1 && styles.stepBadgeTextActive]}>1</Text>
+                  </View>
+                )}
+                <Text style={[styles.stepLabelText, currentStep === 1 && styles.stepLabelActive]}>Tipe Izin</Text>
               </View>
-              <View style={[styles.stepLine, currentStep >= 2 && styles.stepLineActive]} />
 
-              <View style={[styles.stepBadge, currentStep >= 2 && styles.stepBadgeActive]}>
-                <Text style={[styles.stepBadgeText, currentStep >= 2 && styles.stepBadgeTextActive]}>
-                  2
-                </Text>
+              <Ionicons name="chevron-forward" size={14} color="#CBD5E1" />
+
+              {/* Step 2 */}
+              <View style={styles.stepItemRow}>
+                {currentStep > 2 ? (
+                  <Ionicons name="checkmark-circle" size={22} color="#16A34A" />
+                ) : (
+                  <View style={[styles.stepBadge, currentStep === 2 && styles.stepBadgeActive]}>
+                    <Text style={[styles.stepBadgeText, currentStep === 2 && styles.stepBadgeTextActive]}>2</Text>
+                  </View>
+                )}
+                <Text style={[styles.stepLabelText, currentStep === 2 && styles.stepLabelActive]}>Detail</Text>
               </View>
-              <View style={[styles.stepLine, currentStep >= 3 && styles.stepLineActive]} />
 
-              <View style={[styles.stepBadge, currentStep >= 3 && styles.stepBadgeActive]}>
-                <Text style={[styles.stepBadgeText, currentStep >= 3 && styles.stepBadgeTextActive]}>
-                  3
-                </Text>
+              <Ionicons name="chevron-forward" size={14} color="#CBD5E1" />
+
+              {/* Step 3 */}
+              <View style={styles.stepItemRow}>
+                <View style={[styles.stepBadge, currentStep === 3 && styles.stepBadgeActive]}>
+                  <Text style={[styles.stepBadgeText, currentStep === 3 && styles.stepBadgeTextActive]}>3</Text>
+                </View>
+                <Text style={[styles.stepLabelText, currentStep === 3 && styles.stepLabelActive]}>Review</Text>
               </View>
             </View>
           </View>
@@ -528,27 +541,38 @@ export default function LeaveScreen() {
             </View>
           )}
 
-          {/* STEP 3: Review & Submit */}
+          {/* STEP 3: Review & Submit (Matching Web Screenshot) */}
           {currentStep === 3 && (
             <View style={styles.stepContent}>
-              <Text style={styles.stepTitle}>Konfirmasi Pengajuan</Text>
+              <Text style={styles.stepTitle}>Review Pengajuan</Text>
+              <Text style={styles.stepSubtitle}>
+                Periksa kembali data pengajuan Anda sebelum dikirim
+              </Text>
 
               <View style={styles.reviewBox}>
                 <View style={styles.reviewRow}>
-                  <Text style={styles.reviewLabel}>Tipe Pengajuan:</Text>
+                  <Text style={styles.reviewLabel}>Tipe Izin</Text>
                   <Text style={styles.reviewValue}>{selectedTypeObj.label}</Text>
                 </View>
 
                 <View style={styles.reviewRow}>
-                  <Text style={styles.reviewLabel}>Periode Tanggal:</Text>
-                  <Text style={styles.reviewValue}>
-                    {startDate} - {endDate}
-                  </Text>
+                  <Text style={styles.reviewLabel}>Tanggal Mulai</Text>
+                  <Text style={styles.reviewValue}>{startDate}</Text>
                 </View>
 
                 <View style={styles.reviewRow}>
-                  <Text style={styles.reviewLabel}>Alasan:</Text>
-                  <Text style={styles.reviewValue}>{reason}</Text>
+                  <Text style={styles.reviewLabel}>Tanggal Selesai</Text>
+                  <Text style={styles.reviewValue}>{endDate}</Text>
+                </View>
+
+                <View style={styles.reviewRow}>
+                  <Text style={styles.reviewLabel}>Alasan</Text>
+                  <Text style={styles.reviewValue}>{reason || '-'}</Text>
+                </View>
+
+                <View style={styles.reviewRow}>
+                  <Text style={styles.reviewLabel}>Catatan</Text>
+                  <Text style={styles.reviewValue}>-</Text>
                 </View>
               </View>
 
@@ -556,8 +580,10 @@ export default function LeaveScreen() {
                 <TouchableOpacity
                   style={styles.backStepBtn}
                   onPress={() => setCurrentStep(2)}
+                  activeOpacity={0.8}
                 >
-                  <Text style={styles.backStepBtnText}>Ubah</Text>
+                  <Ionicons name="chevron-back" size={16} color="#566069" />
+                  <Text style={styles.backStepBtnText}>Kembali</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -566,6 +592,7 @@ export default function LeaveScreen() {
                   disabled={submitting}
                   activeOpacity={0.85}
                 >
+                  <Ionicons name="send" size={16} color="#FFFFFF" />
                   <Text style={styles.nextBtnText}>
                     {submitting ? 'Mengirim...' : 'Kirim Pengajuan'}
                   </Text>
@@ -848,7 +875,13 @@ const styles = StyleSheet.create({
   stepperContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  stepItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   stepBadge: {
     width: 22,
@@ -868,6 +901,21 @@ const styles = StyleSheet.create({
   },
   stepBadgeTextActive: {
     color: '#FFFFFF',
+  },
+  stepLabelText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#94A3B8',
+  },
+  stepLabelActive: {
+    color: '#1E293B',
+    fontWeight: '700',
+  },
+  stepSubtitle: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: -4,
+    marginBottom: 8,
   },
   stepLine: {
     width: 14,
