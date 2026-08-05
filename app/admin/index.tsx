@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,28 +14,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { adminService } from '../../src/services/adminService';
 import { ActivityFeedItem } from '../../src/types';
 
+export const TOP_EARLIEST_ATTENDANCE = [
+  { id: 't1', name: 'Heru Rizky Fajar', time: '08:02', dept: 'Engineering', rank: 1 },
+  { id: 't2', name: 'Denish Twidovant', time: '08:16', dept: 'Engineering', rank: 2 },
+  { id: 't3', name: 'Vlosa Rayhan Pratama', time: '08:43', dept: 'Engineering', rank: 3 },
+  { id: 't4', name: 'Fikhaar Hafiidz Ramadhan', time: '08:49', dept: 'Engineering', rank: 4 },
+  { id: 't5', name: 'Muhammad Raihan Ramadhan', time: '08:49', dept: 'Engineering', rank: 5 },
+];
+
 export default function AdminDashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const [feed, setFeed] = useState<ActivityFeedItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [currentTime, setCurrentTime] = useState('');
-
-  // Digital clock timer
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const hours = String(now.getHours()).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const seconds = String(now.getSeconds()).padStart(2, '0');
-      setCurrentTime(`${hours}.${minutes}.${seconds}`);
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const loadAdminData = async () => {
     setLoading(true);
@@ -52,6 +45,10 @@ export default function AdminDashboardScreen() {
     loadAdminData();
   }, []);
 
+  const handleExport = () => {
+    Alert.alert('Export Berhasil', 'Laporan absensi berhasil diexport dalam format Excel/PDF.');
+  };
+
   return (
     <View style={styles.container}>
       {/* Top Bar Header */}
@@ -60,7 +57,7 @@ export default function AdminDashboardScreen() {
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={20} color="#121C2C" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Dashboard Karyawan</Text>
+          <Text style={styles.headerTitle}>Dashboard Admin</Text>
           <View style={styles.adminPillBadge}>
             <Text style={styles.adminPillBadgeText}>Admin</Text>
           </View>
@@ -76,16 +73,70 @@ export default function AdminDashboardScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={loadAdminData} />}
       >
-        {/* Quick Admin Navigation Toolbar */}
+        {/* Sub-header Title */}
+        <View style={styles.subHeaderRow}>
+          <View>
+            <Text style={styles.overviewTitle}>Overview Perusahaan</Text>
+            <Text style={styles.overviewDate}>Rabu, 5 Agustus 2026</Text>
+          </View>
+        </View>
+
+        {/* Top 4 Stat Cards Grid (Matching proxtime_web) */}
+        <View style={styles.statGrid}>
+          {/* Card 1: Total Karyawan */}
+          <View style={[styles.statCard, { backgroundColor: '#EBF3FE' }]}>
+            <View style={styles.statCardHeader}>
+              <Text style={styles.statCardLabel}>Total Karyawan</Text>
+              <Ionicons name="people-outline" size={20} color="#005ea1" />
+            </View>
+            <Text style={[styles.statCardNumber, { color: '#005ea1' }]}>11</Text>
+          </View>
+
+          {/* Card 2: Hadir Hari Ini */}
+          <View style={[styles.statCard, { backgroundColor: '#E6F4EA' }]}>
+            <View style={styles.statCardHeader}>
+              <Text style={styles.statCardLabel}>Hadir Hari Ini</Text>
+              <Ionicons name="checkmark-circle-outline" size={20} color="#1E8E3E" />
+            </View>
+            <Text style={[styles.statCardNumber, { color: '#1E8E3E' }]}>6</Text>
+          </View>
+
+          {/* Card 3: Terlambat */}
+          <View style={[styles.statCard, { backgroundColor: '#FEF3C7' }]}>
+            <View style={styles.statCardHeader}>
+              <Text style={styles.statCardLabel}>Terlambat</Text>
+              <Ionicons name="warning-outline" size={20} color="#D97706" />
+            </View>
+            <Text style={[styles.statCardNumber, { color: '#D97706' }]}>2</Text>
+          </View>
+
+          {/* Card 4: Tidak Hadir */}
+          <View style={[styles.statCard, { backgroundColor: '#FEE2E2' }]}>
+            <View style={styles.statCardHeader}>
+              <Text style={styles.statCardLabel}>Tidak Hadir</Text>
+              <Ionicons name="close-circle-outline" size={20} color="#DC2626" />
+            </View>
+            <Text style={[styles.statCardNumber, { color: '#DC2626' }]}>3</Text>
+          </View>
+        </View>
+
+        {/* Quick Admin Navigation & Export Toolbar */}
         <View style={styles.quickNavRow}>
+          <TouchableOpacity
+            style={styles.actionPillBtn}
+            onPress={handleExport}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="download-outline" size={16} color="#FFFFFF" />
+            <Text style={styles.actionPillText}>Export Laporan</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.quickNavCard}
             onPress={() => router.push('/admin/leave-approvals')}
             activeOpacity={0.8}
           >
-            <View style={[styles.quickNavIconBg, { backgroundColor: '#EBF3FE' }]}>
-              <Ionicons name="document-text-outline" size={20} color="#005ea1" />
-            </View>
+            <Ionicons name="document-text-outline" size={16} color="#005ea1" />
             <Text style={styles.quickNavText}>Cuti & Izin</Text>
           </TouchableOpacity>
 
@@ -94,9 +145,7 @@ export default function AdminDashboardScreen() {
             onPress={() => router.push('/admin/employees')}
             activeOpacity={0.8}
           >
-            <View style={[styles.quickNavIconBg, { backgroundColor: '#E6F4EA' }]}>
-              <Ionicons name="people-outline" size={20} color="#1E8E3E" />
-            </View>
+            <Ionicons name="people-outline" size={16} color="#1E8E3E" />
             <Text style={styles.quickNavText}>Karyawan</Text>
           </TouchableOpacity>
 
@@ -105,83 +154,53 @@ export default function AdminDashboardScreen() {
             onPress={() => router.push('/admin/settings')}
             activeOpacity={0.8}
           >
-            <View style={[styles.quickNavIconBg, { backgroundColor: '#FFF3E0' }]}>
-              <Ionicons name="settings-outline" size={20} color="#E65100" />
-            </View>
+            <Ionicons name="settings-outline" size={16} color="#E65100" />
             <Text style={styles.quickNavText}>Pengaturan</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Top 4 Stat Cards Carousel/Grid */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.statCardsContainer}
-        >
-          {/* Card 1: Total Hadir */}
-          <View style={[styles.statCard, { backgroundColor: '#E6F4EA' }]}>
-            <View style={styles.statCardHeader}>
-              <Text style={styles.statCardLabel}>Total Hadir (Bulan Ini)</Text>
-              <Ionicons name="checkmark-circle-outline" size={20} color="#1E8E3E" />
+        {/* Card: Absen Paling Cepat (Top 5 Early Arrival) */}
+        <View style={styles.sectionCard}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.titleWithIcon}>
+              <Ionicons name="trophy-outline" size={20} color="#D97706" />
+              <Text style={styles.sectionTitle}>Absen Paling Cepat</Text>
             </View>
-            <Text style={[styles.statCardNumber, { color: '#1E8E3E' }]}>3</Text>
+            <Text style={styles.subTagText}>Top 5 Hari Ini</Text>
           </View>
 
-          {/* Card 2: Total Terlambat */}
-          <View style={[styles.statCard, { backgroundColor: '#FEF3C7' }]}>
-            <View style={styles.statCardHeader}>
-              <Text style={styles.statCardLabel}>Total Terlambat</Text>
-              <Ionicons name="warning-outline" size={20} color="#D97706" />
-            </View>
-            <Text style={[styles.statCardNumber, { color: '#D97706' }]}>2</Text>
-          </View>
+          <View style={styles.earliestList}>
+            {TOP_EARLIEST_ATTENDANCE.map((item) => (
+              <View key={item.id} style={styles.earliestRow}>
+                <View
+                  style={[
+                    styles.rankBadge,
+                    item.rank === 1 && styles.rankBadge1,
+                    item.rank === 2 && styles.rankBadge2,
+                    item.rank === 3 && styles.rankBadge3,
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.rankText,
+                      item.rank <= 3 && styles.rankTextTop,
+                    ]}
+                  >
+                    {item.rank}
+                  </Text>
+                </View>
 
-          {/* Card 3: Sisa Cuti */}
-          <View style={[styles.statCard, { backgroundColor: '#E0F2FE' }]}>
-            <View style={styles.statCardHeader}>
-              <Text style={styles.statCardLabel}>Sisa Cuti</Text>
-              <Ionicons name="calendar-outline" size={20} color="#0284C7" />
-            </View>
-            <Text style={[styles.statCardNumber, { color: '#0284C7' }]}>8</Text>
-          </View>
+                <View style={styles.earliestInfo}>
+                  <Text style={styles.earliestName}>{item.name}</Text>
+                  <Text style={styles.earliestDept}>{item.dept}</Text>
+                </View>
 
-          {/* Card 4: Jam Lembur */}
-          <View style={[styles.statCard, { backgroundColor: '#F3E8FF' }]}>
-            <View style={styles.statCardHeader}>
-              <Text style={styles.statCardLabel}>Jam Lembur</Text>
-              <Ionicons name="time-outline" size={20} color="#9333EA" />
-            </View>
-            <Text style={[styles.statCardNumber, { color: '#9333EA' }]}>1</Text>
-          </View>
-        </ScrollView>
-
-        {/* Hero Digital Clock Card (Gradient Blue) */}
-        <View style={styles.heroCard}>
-          <Text style={styles.heroDateText}>RABU, 5 AGUSTUS 2026</Text>
-          <View style={styles.heroClockRow}>
-            <Ionicons name="time-outline" size={28} color="#FFFFFF" />
-            <Text style={styles.heroClockText}>{currentTime || '13.36.29'}</Text>
-          </View>
-
-          <View style={styles.heroPillStatus}>
-            <Text style={styles.heroPillStatusText}>Selesai Hari Ini</Text>
-          </View>
-
-          <View style={styles.checkTimesRow}>
-            <View style={styles.checkTimeCol}>
-              <Text style={styles.checkTimeLabel}>➔| CHECK-IN</Text>
-              <Text style={styles.checkTimeValue}>08:49</Text>
-            </View>
-
-            <View style={styles.checkTimeCol}>
-              <Text style={styles.checkTimeLabel}>|➔ CHECK-OUT</Text>
-              <Text style={styles.checkTimeValue}>17:26</Text>
-            </View>
-          </View>
-
-          <View style={styles.doneBtn}>
-            <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
-            <Text style={styles.doneBtnText}>Absensi Selesai</Text>
+                <View style={styles.timeBadge}>
+                  <Ionicons name="time-outline" size={13} color="#005ea1" />
+                  <Text style={styles.timeBadgeText}>{item.time}</Text>
+                </View>
+              </View>
+            ))}
           </View>
         </View>
 
@@ -267,44 +286,33 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 16,
   },
-  quickNavRow: {
+  subHeaderRow: {
+    marginBottom: 4,
+  },
+  overviewTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#121C2C',
+  },
+  overviewDate: {
+    fontSize: 12,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  statGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 12,
   },
-  quickNavCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 12,
-    alignItems: 'center',
+  statCard: {
+    width: '48%',
+    borderRadius: 20,
+    padding: 16,
     shadowColor: '#4A90D9',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.06,
     shadowRadius: 8,
     elevation: 2,
-  },
-  quickNavIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  quickNavText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#121C2C',
-  },
-  statCardsContainer: {
-    gap: 12,
-    paddingRight: 16,
-  },
-  statCard: {
-    minWidth: 140,
-    borderRadius: 16,
-    padding: 14,
-    justifyContent: 'center',
   },
   statCardHeader: {
     flexDirection: 'row',
@@ -320,84 +328,43 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   statCardNumber: {
-    fontSize: 24,
-    fontWeight: '800',
-  },
-  heroCard: {
-    backgroundColor: '#2563EB',
-    borderRadius: 24,
-    padding: 20,
-    alignItems: 'center',
-    shadowColor: '#2563EB',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 4,
-  },
-  heroDateText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.8)',
-    letterSpacing: 0.5,
-  },
-  heroClockRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginVertical: 10,
-  },
-  heroClockText: {
-    fontSize: 32,
+    fontSize: 26,
     fontWeight: '900',
-    color: '#FFFFFF',
   },
-  heroPillStatus: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 14,
-    paddingVertical: 4,
-    borderRadius: 50,
-    marginBottom: 16,
-  },
-  heroPillStatusText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  checkTimesRow: {
+  quickNavRow: {
     flexDirection: 'row',
-    width: '100%',
-    justifyContent: 'space-around',
-    marginBottom: 16,
+    flexWrap: 'wrap',
+    gap: 10,
   },
-  checkTimeCol: {
-    alignItems: 'center',
-  },
-  checkTimeLabel: {
-    fontSize: 10,
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontWeight: '600',
-  },
-  checkTimeValue: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginTop: 2,
-  },
-  doneBtn: {
+  actionPillBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
-    paddingHorizontal: 20,
+    backgroundColor: '#005ea1',
+    paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 50,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
   },
-  doneBtnText: {
+  actionPillText: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
+  },
+  quickNavCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 50,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  quickNavText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#121C2C',
   },
   sectionCard: {
     backgroundColor: '#FFFFFF',
@@ -425,11 +392,79 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#121C2C',
   },
+  subTagText: {
+    fontSize: 11,
+    color: '#64748B',
+    fontWeight: '500',
+  },
   liveDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: '#22C55E',
+  },
+  earliestList: {
+    gap: 10,
+  },
+  earliestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  rankBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  rankBadge1: {
+    backgroundColor: '#FEF08A',
+  },
+  rankBadge2: {
+    backgroundColor: '#E2E8F0',
+  },
+  rankBadge3: {
+    backgroundColor: '#FFEDD5',
+  },
+  rankText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748B',
+  },
+  rankTextTop: {
+    color: '#121C2C',
+  },
+  earliestInfo: {
+    flex: 1,
+  },
+  earliestName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#121C2C',
+  },
+  earliestDept: {
+    fontSize: 11,
+    color: '#64748B',
+    marginTop: 2,
+  },
+  timeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#EBF3FE',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 50,
+  },
+  timeBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#005ea1',
   },
   feedList: {
     gap: 12,
