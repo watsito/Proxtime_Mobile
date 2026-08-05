@@ -23,7 +23,7 @@ export const LEAVE_TYPES_LIST = [
   { value: 'sick', label: 'Cuti Sakit', category: 'Sakit', sub: 'Disertai surat keterangan dokter', icon: 'fitness-outline', color: '#DC2626', bg: '#FEE2E2' },
   { value: 'personal', label: 'Cuti Pribadi', category: 'Cuti', sub: 'Keperluan keluarga atau pribadi', icon: 'person-outline', color: '#4F46E5', bg: '#EEF2FF' },
   { value: 'late', label: 'Izin Telat Datang', category: 'Izin', sub: 'Izin terlambat masuk kerja', icon: 'time-outline', color: '#D97706', bg: '#FEF3C7' },
-  { value: 'early', label: 'Izin WFH', category: 'Izin', sub: 'Izin bekerja dari rumah (WFH)', icon: 'home-outline', color: '#0284C7', bg: '#E0F2FE' },
+  { value: 'early', label: 'Izin WFA', category: 'Izin', sub: 'Izin bekerja dari mana saja (WFA)', icon: 'home-outline', color: '#0284C7', bg: '#E0F2FE' },
   { value: 'marriage', label: 'Cuti Menikah', category: 'Cuti Khusus', sub: 'Cuti khusus pernikahan', icon: 'heart-outline', color: '#EC4899', bg: '#FCE7F3' },
   { value: 'maternity', label: 'Cuti Melahirkan', category: 'Cuti Khusus', sub: 'Cuti khusus melahirkan', icon: 'happy-outline', color: '#8B5CF6', bg: '#F3E8FF' },
   { value: 'religious', label: 'Cuti Keagamaan', category: 'Cuti Khusus', sub: 'Cuti ziarah / keagamaan', icon: 'ribbon-outline', color: '#10B981', bg: '#D1FAE5' },
