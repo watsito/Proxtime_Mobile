@@ -167,12 +167,12 @@ export default function ProfileScreen() {
               </View>
             </View>
             <Text style={styles.adminCardSub}>
-              Kelola absensi tim, persetujuan cuti & izin, direktori karyawan, dan pengaturan sistem.
+              Mode Admin Aktif! Ketuk tombol "Dashboard" di navigasi bawah untuk langsung mengakses Dashboard Admin, feed presensi tim, dan persetujuan cuti.
             </Text>
 
             <TouchableOpacity
               style={styles.adminEnterBtn}
-              onPress={() => router.push('/admin')}
+              onPress={() => router.push('/(tabs)')}
               activeOpacity={0.85}
             >
               <Ionicons name="apps-outline" size={18} color="#FFFFFF" />
